@@ -208,5 +208,3 @@ Possible enhancements:
 ## License
 
 This project is open for educational and learning purposes.
-
-This README is suitable for **GitHub and internships** and clearly shows you understand **Linux internals and system programming**.
