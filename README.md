@@ -1,48 +1,84 @@
-# Linux System Monitor (sysmon)
+# SysMon 🖥️
 
-A lightweight **Linux system monitoring tool written in C++** that reads system information directly from the Linux **/proc** filesystem.
-The program displays real-time **CPU usage, memory usage, disk usage, and running processes** without using external libraries.
+A lightweight, real-time Linux system monitoring tool written in **modern C++** that reads system metrics directly from the Linux `/proc` filesystem and `statvfs` — **zero external dependencies**.
 
-This project demonstrates **Linux system programming**, **file parsing**, and **resource monitoring** using standard C++.
+```
+========== CPU ==========
+Total Usage: 12.4%
+User: 8.1%   System: 3.2%   Idle: 87.6%
+IOWait: 0.8%   IRQ: 0.1%   SoftIRQ: 0.2%
+
+========== MEMORY ==========
+Total: 7812 MB
+Used : 4921 MB
+Free : 2891 MB
+Usage: 63.0%
+
+========== DISK ==========
+Total: 124.76 GB
+Used : 90.63 GB
+Free : 27.45 GB
+Usage: 77.99%
+
+========== TOP PROCESSES ==========
+PID     NAME                STATE   MEM(MB)     CPU%
+1234    firefox             S       512         4.21
+5678    clang++             R       210         2.10
+...
+```
 
 ---
 
 ## Features
 
-* Real-time **CPU usage monitoring**
-* **RAM usage statistics**
-* **Disk storage usage**
-* **Running process list**
-* Displays:
-
-  * PID
-  * Process name
-  * Process state
-  * Memory usage
-  * CPU usage
-* Refreshes automatically at a fixed interval
-* Uses **Linux system files** such as `/proc` and `statvfs`
+- **CPU usage** — real-time user, system, idle, iowait, IRQ, softIRQ breakdown via `/proc/stat`
+- **Memory usage** — total, used, available via `/proc/meminfo`
+- **Disk usage** — total, used, free, usage% via `statvfs()` (matches `df -h` output)
+- **Top 10 processes** — sorted by CPU%, with PID, name, state, and resident memory via `/proc/[pid]/stat` and `/proc/[pid]/status`
+- Refreshes every **1 second** with screen clear
 
 ---
 
-## System Information Sources
+## How It Works
 
-The program reads data from the following Linux interfaces:
+SysMon reads directly from the Linux kernel's virtual filesystem — no `top`, no `ps`, no external libraries.
 
-| Resource            | Source                  |
-| ------------------- | ----------------------- |
-| CPU Usage           | `/proc/stat`            |
-| Memory Usage        | `/proc/meminfo`         |
-| Process Information | `/proc/[PID]/`          |
-| Disk Usage          | `statvfs()` system call |
+### CPU Usage (Delta Sampling)
+Linux exposes cumulative CPU ticks in `/proc/stat`. A single snapshot is meaningless — SysMon takes **two snapshots with a time delta** and calculates the percentage change:
+
+```
+cpu_usage% = (1 - idle_delta / total_delta) * 100
+```
+
+Where `idle_delta` includes both `idle` and `iowait` ticks — the same method used by `htop`.
+
+### Memory
+Reads `MemTotal` and `MemAvailable` from `/proc/meminfo`:
+```
+used = MemTotal - MemAvailable
+```
+Uses `MemAvailable` (not `MemFree`) because it accounts for reclaimable cache — a more accurate picture of actual available memory.
+
+### Disk
+Uses `statvfs()` with `f_bavail` (available to non-root users) and `f_bfree` (total free including reserved):
+```
+used  = (f_blocks - f_bfree) * f_frsize
+free  = f_bavail * f_frsize
+total = used + free
+```
+This matches `df -h` behaviour exactly. Linux reserves ~5% of blocks for root — using `f_bavail` vs `f_bfree` is intentional.
+
+### Process CPU%
+Each process's CPU usage is calculated using the same delta method — two reads of `/proc/[pid]/stat` with a **500ms interval** between them:
+```
+process_cpu% = (proc_delta / total_cpu_delta) * 100
+```
 
 ---
 
 ## Project Structure
-
 ```
-linux-system-monitor/
-
+sysmon/
 include/
     cpu.h
     ResouceMonitor.h // RAM & Disk Combined
@@ -62,185 +98,58 @@ src/
 build/
     sysmon
 ```
-
 ---
 
-## How It Works
+## Build & Run
 
-### CPU Monitoring
+### Requirements
+- Linux (kernel 2.6+)
+- g++ with C++17 support
+- CMake 3.10+
 
-The program reads CPU statistics from `/proc/stat`.
-
-CPU usage is calculated using the difference between two snapshots:
-
-```
-usage = (1 - idle_time / total_time) * 100
-```
-
----
-
-### Memory Monitoring
-
-Memory statistics are read from `/proc/meminfo`.
-
-```
-Used Memory = MemTotal - MemAvailable
-```
-
----
-
-### Disk Monitoring
-
-Disk information is obtained using the `statvfs()` system call.
-
-```
-Total Space = f_blocks * f_frsize
-Free Space  = f_bavail * f_frsize
-Used Space  = Total - Free
-```
-
----
-
-### Process Monitoring
-
-Processes are discovered by scanning numeric directories in `/proc`.
-
-For each process the program reads:
-
-```
-/proc/[pid]/stat
-/proc/[pid]/status
-```
-
-Displayed information includes:
-
-* Process ID
-* Process name
-* Process state
-* Memory usage
-* CPU usage
-
----
-
-## Build Instructions
-
-Compile using **g++**:
-
-**Debugging With GDB**
-```
-g++ -std=c++17 -g -Wall -Wextra -Iinclude src/*.cpp -o sysmon
-```
- check error with **gdb**
- ```
- run
-
- ```
----
-
-## Build with CMAKE
-
-Generate -o file
-
-```
+### Build
+```bash
+git clone https://github.com/riteshdhurwey/SysMon.git
+cd SysMon
+mkdir build && cd build
+cmake ..
 make
-
 ```
 
-To clean build file
-
-```
-make clean
-
-```
-
-## Run
-
-```
+### Run
+```bash
 ./sysmon
 ```
 
-The program will start displaying real-time system statistics.
+Press `Ctrl+C` to exit.
 
 ---
 
-**How to Install in System**
+## /proc Files Used
 
-```
-sudo make install
-
-```
-
-**How to remove**
-
-```
-sudo make uninstall
-
-```
-
-
-## Example Output
-
-```
-========== CPU ==========
-User: 15%
-System: 3%
-Idle: 80%
-
-========== MEMORY ==========
-Total: 15382 MB
-Used : 9123 MB
-Free : 6259 MB
-Usage: 59%
-
-========== DISK ==========
-Total: 512 GB
-Used : 210 GB
-Free : 302 GB
-Usage: 41%
-
-========== TOP PROCESSES ==========
-PID     NAME           STATE   MEM(MB)   CPU%
-1778    plasmashell    S       453       0.66
-1543    kwin_wayland   S       364       0.49
-43316   sysmon         R       3         0.16
-```
+| File | Purpose |
+|---|---|
+| `/proc/stat` | System-wide CPU tick counters |
+| `/proc/meminfo` | Memory totals and availability |
+| `/proc/[pid]/stat` | Per-process CPU time (utime + stime) |
+| `/proc/[pid]/status` | Per-process resident memory (VmRSS) |
+| `/proc/[pid]/comm` | Process name |
+| `statvfs()` syscall | Disk block counts and sizes |
 
 ---
 
-## Requirements
+## Roadmap
 
-* Linux operating system
-* C++17 compatible compiler
-* Access to `/proc` filesystem
-
----
-
-## Learning Objectives
-
-This project helps understand:
-
-* Linux **/proc filesystem**
-* **System resource monitoring**
-* Parsing system files in C++
-* CPU usage calculation
-* Process management in Linux
-* Clean modular project structure
+- [ ] Per-core CPU breakdown
+- [ ] ANSI color output (red when CPU > 80%)
+- [ ] ncurses TUI
+- [ ] Network I/O from `/proc/net/dev`
+- [ ] `--interval` and `--top N` CLI flags
+- [ ] Metric logging to CSV
 
 ---
 
-## Future Improvements
+## Author
 
-Possible enhancements:
-
-* Per-core CPU usage
-* Network monitoring
-* Process sorting by CPU usage
-* Interactive interface
-* Terminal UI (similar to `top` or `htop`)
-* Configurable refresh rate
-
----
-
-## License
-
-This project is open for educational and learning purposes.
+**Ritesh Dhurwey**
+[LinkedIn](https://linkedin.com/in/ritesh-dhurwey-100383216) · [GitHub](https://github.com/riteshdhurwey)
