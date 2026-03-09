@@ -4,6 +4,7 @@ std::vector<int> ProcessMonitor::getAllPids(){
     std::vector<int> pids;
     DIR* dir = opendir("/proc");
     struct dirent* entry;
+    if(!dir) return pids;
     while((entry = readdir(dir))!=nullptr){
         if(isdigit(entry->d_name[0])){
             pids.push_back(atoi(entry->d_name));
@@ -49,16 +50,31 @@ long ProcessMonitor::readProcessMemory(int pid){
 
 std::string ProcessMonitor::readProcessName(int pid){
     std::ifstream file("/proc/" + std::to_string(pid) + "/comm");
+    if(!file) return "";
     std::string name;
     std::getline(file, name);
     return name;
 }
 
-std::string ProcessMonitor::readProcessState(int pid){
+std::string ProcessMonitor::readProcessState(int pid) {
     std::ifstream file("/proc/" + std::to_string(pid) + "/stat");
-    std::string tmp, state;
-    file >> tmp >> tmp >> state; // PID, Name, State
-    return state;
+    if (!file) return "?";
+
+    std::string token;
+    // Skip PID
+    file >> token;
+
+    // Read full name — handles spaces e.g. "(Web Content)"
+    std::string fullLine;
+    std::getline(file, fullLine);
+
+    // Find last ')' — state is the char after ") "
+    size_t pos = fullLine.rfind(')');
+    if (pos == std::string::npos || pos + 2 >= fullLine.size())
+        return "?";
+
+    // State is the single char after ") "
+    return std::string(1, fullLine[pos + 2]);
 }
 void ProcessMonitor::update() {
 

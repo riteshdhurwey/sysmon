@@ -12,9 +12,9 @@ struct MemoryUsage {
 };
 
 struct DiskUsage {
-    long totalGB;
-    long usedGB;
-    long freeGB;
+    double totalGB;
+    double usedGB;
+    double freeGB;
     double percent;
 };
 

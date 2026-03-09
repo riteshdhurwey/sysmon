@@ -25,7 +25,7 @@ DiskUsage ResourceMonitor::readDiskInfo(){
     DiskUsage data{};
     struct statvfs buf;
 
-    if(statvfs("/home", &buf) != 0){
+    if(statvfs("/", &buf) != 0){
         std::cerr << "Failed to get filesystem stats\n";
         return data;
     }
