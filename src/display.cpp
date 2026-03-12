@@ -12,18 +12,18 @@ void Display::show(const SystemMonitor& monitor)
 
 void Display::showCPU(const CPUUsage &cpu){
      std::cout << "========== CPU ==========\n";
+//printf is used to print a floating-point number with 2 digits after the decimal.
+    printf("Total Usage: %.2f%%\n", cpu.total);
 
-    std::cout << "Total Usage: " << cpu.total << "%\n";
+    printf("User: %.2f%%  ", cpu.user);
+    printf("System: %.2f%%  ", cpu.system);
+    printf("Idle: %.2f%%\n", cpu.idle);
 
-    std::cout << "User: " << cpu.user << "%  ";
-    std::cout << "System: " << cpu.system << "%  ";
-    std::cout << "Idle: " << cpu.idle << "%\n";
+    printf("IOWait: %.2f%%  ", cpu.iowait);
+    printf("IRQ: %.2f%%  ", cpu.irq);
+    printf("SoftIRQ: %.2f%%\n", cpu.softirq);
 
-    std::cout << "IOWait: " << cpu.iowait << "%  ";
-    std::cout << "IRQ: " << cpu.irq << "%  ";
-    std::cout << "SoftIRQ: " << cpu.softirq << "%\n";
-
-    std::cout << "\n";
+    printf("\n");
 }
 
 void Display::showDisk(const DiskUsage& disk)
