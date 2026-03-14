@@ -8,7 +8,7 @@ OBJ = $(SRC:.cpp=.o)
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CXX) $(OBJ) -o $(TARGET)
+	$(CXX) $(OBJ) -o $(TARGET) -lncursesw -ltinfo -lpthread
 
 src/%.o: src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@

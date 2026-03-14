@@ -11,12 +11,16 @@ const DiskUsage& SystemMonitor::getDiskInfo() const{
     return resource.getDisks();
 }
 
-const std::vector<Process> & SystemMonitor::getTopProcesses() const{
-    return processMonitor.getTopProcesses();
+const std::vector<Process> & SystemMonitor::getProcesses() const{
+    return processMonitor.getProcesses();
 }
 
 void SystemMonitor::update(){
     cpu.update();
     resource.update();
     processMonitor.update();
+}
+
+void SystemMonitor::sortProcessBy(SortBy criterion){
+    processMonitor.sortBy(criterion);
 }

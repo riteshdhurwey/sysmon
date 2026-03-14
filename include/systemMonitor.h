@@ -19,5 +19,7 @@ public:
 
     const DiskUsage& getDiskInfo() const;
 
-    const std::vector<Process>& getTopProcesses() const;
+    const std::vector<Process>& getProcesses() const;
+
+    void sortProcessBy(SortBy criterion);
 };

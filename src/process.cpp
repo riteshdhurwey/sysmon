@@ -120,19 +120,40 @@ void ProcessMonitor::update() {
         p.state = readProcessState(pid);
         p.memoryKB = readProcessMemory(pid);
         p.cpuPercent = cpuPercent;
-
+        if(p.memoryKB == 0) continue;
         processes.push_back(p);
     }
-    //This sorts processes descending by CPU usage.
-    std::sort(processes.begin(), processes.end(),
-              [](const Process& a, const Process& b) {
-                  return a.cpuPercent > b.cpuPercent;
-              });
 
-    if (processes.size() > 10)
-        processes.resize(10);
+    applySort();
+
 }
 
-const std::vector<Process> &ProcessMonitor::getTopProcesses() const{
+const std::vector<Process> &ProcessMonitor::getProcesses() const{
     return processes;
 }
+
+void ProcessMonitor::applySort() {
+    std::sort(processes.begin(), processes.end(),
+        [this](const Process& a, const Process& b) {
+            if (currentSort == SortBy::CPU)
+                return sortAscending ? a.cpuPercent < b.cpuPercent
+                                     : a.cpuPercent > b.cpuPercent;
+            if (currentSort == SortBy::MEM)
+                return sortAscending ? a.memoryKB < b.memoryKB
+                                     : a.memoryKB > b.memoryKB;
+            return sortAscending ? a.pid < b.pid
+                                 : a.pid > b.pid;
+        });
+}
+
+void ProcessMonitor::sortBy(SortBy criterion) {
+    if (currentSort == criterion)
+        sortAscending = !sortAscending;
+    else
+        sortAscending = false;
+
+    currentSort = criterion;
+    applySort();
+
+}
+

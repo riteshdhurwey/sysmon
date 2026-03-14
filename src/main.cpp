@@ -1,21 +1,33 @@
-#include "display.h"
-#include <thread>
+#include "ui.h"
 #include <chrono>
 
-int main()
-{
+int main() {
     SystemMonitor monitor;
-    Display display;
+    UI ui;
+    ui.init();
 
-    while(true)
-    {
-        std::cout << "\033[2J\033[H";  // Clear screen & move cursor to above
+    monitor.update();  
+
+    auto lastUpdate = std::chrono::steady_clock::now();
+
+    while (true) {
+    if (!ui.handleInput(monitor)) break;
+
+    auto now = std::chrono::steady_clock::now();
+    auto idleTime = std::chrono::duration_cast<std::chrono::milliseconds>
+                    (now - ui.getLastKeyTime()).count();
+
+    bool shouldUpdate = !ui.isPaused() || idleTime >= 1000;
+
+    if (shouldUpdate && now - lastUpdate >= std::chrono::seconds(1)) {
+        if (idleTime >= 1000) ui.setPaused(false);
         monitor.update();
-
-        display.show(monitor);
-
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        lastUpdate = now;
     }
 
+    ui.draw(monitor);  
+}
+
+    ui.destroy();
     return 0;
 }
