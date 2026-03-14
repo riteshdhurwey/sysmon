@@ -5,7 +5,7 @@ A lightweight, real-time Linux system monitoring tool written in **modern C++** 
 
 ---
 
-[![SysMon Demo](https://asciinema.org/a/ZPgR7oLSwYV1wnG1.svg)](https://asciinema.org/a/ZPgR7oLSwYV1wnG1)
+[![SysMon Demo](https://asciinema.org/a/UJdGYqylhvy7JUit.svg)](https://asciinema.org/a/UJdGYqylhvy7JUit)
 ## Features
 
 ### System Monitoring
